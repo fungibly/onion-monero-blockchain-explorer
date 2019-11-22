@@ -817,9 +817,10 @@ main(int ac, const char* av[])
     if (use_ssl)
     {
         cout << "Staring in ssl mode" << endl;
-        app.bindaddr(bindaddr).port(app_port).ssl_file(
-                ssl_crt_file, ssl_key_file)
-                .multithreaded().run();
+        auto & appref = app.bindaddr(bindaddr).port(app_port).ssl_file(
+                ssl_crt_file, ssl_key_file);
+        appref.ssl_context_.set_verify_mode (boost::asio::ssl::verify_none);
+        appref.multithreaded().run();
     }
     else
     {
