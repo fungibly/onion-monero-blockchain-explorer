@@ -604,9 +604,7 @@ index2(uint64_t page_no = 0, bool refresh_page = false)
     });
 
     //get current server timestamp
-    server_timestamp = std::time(nullptr);
-
-    uint64_t local_copy_server_timestamp = server_timestamp;
+    uint64_t local_copy_server_timestamp = update_server_timestamp();
 
     // get the current blockchain height. Just to check
     uint64_t height = core_storage->get_current_blockchain_height();
@@ -1062,6 +1060,8 @@ show_block(uint64_t _blk_height)
         return fmt::format("Cant get block {:d}!", _blk_height);
     }
 
+    uint64_t local_copy_server_timestamp = update_server_timestamp();
+
     // get block's hash
     crypto::hash blk_hash = core_storage->get_block_id_by_height(_blk_height);
 
@@ -1087,7 +1087,7 @@ show_block(uint64_t _blk_height)
     string blk_timestamp = xmreg::timestamp_to_str_gm(blk.timestamp);
 
     // get age of the block relative to the server time
-    pair<string, string> age = get_age(server_timestamp, blk.timestamp);
+    pair<string, string> age = get_age(local_copy_server_timestamp, blk.timestamp);
 
     // get time from the last block
     string delta_time {"N/A"};
@@ -1326,6 +1326,8 @@ show_tx(string tx_hash_str, uint16_t with_ring_signatures = 0, bool refresh_page
 
     string blk_timestamp {"N/A"};
 
+    uint64_t local_copy_server_timestamp = update_server_timestamp();
+
     // get transaction
     transaction tx;
 
@@ -1353,7 +1355,7 @@ show_tx(string tx_hash_str, uint16_t with_ring_signatures = 0, bool refresh_page
 
             blk_timestamp = xmreg::timestamp_to_str_gm(tx_recieve_timestamp);
 
-            age = get_age(server_timestamp, tx_recieve_timestamp,
+            age = get_age(local_copy_server_timestamp, tx_recieve_timestamp,
                           FULL_AGE_FORMAT);
 
             // for mempool tx, we dont show more details, e.g., json tx representation
@@ -1975,6 +1977,8 @@ show_my_outputs(string tx_hash_str,
 
     string blk_timestamp {"N/A"};
 
+    uint64_t local_copy_server_timestamp = update_server_timestamp();
+
     // get transaction
     transaction tx;
 
@@ -2033,7 +2037,7 @@ show_my_outputs(string tx_hash_str,
 
             blk_timestamp = xmreg::timestamp_to_str_gm(tx_recieve_timestamp);
 
-            age = get_age(server_timestamp,
+            age = get_age(local_copy_server_timestamp,
                           tx_recieve_timestamp,
                           FULL_AGE_FORMAT);
         }
@@ -2074,7 +2078,7 @@ show_my_outputs(string tx_hash_str,
     if (tx_blk_found)
     {
         // calculate difference between tx and server timestamps
-        age = get_age(server_timestamp, blk.timestamp, FULL_AGE_FORMAT);
+        age = get_age(local_copy_server_timestamp, blk.timestamp, FULL_AGE_FORMAT);
 
         blk_timestamp = xmreg::timestamp_to_str_gm(blk.timestamp);
 
@@ -2777,6 +2781,7 @@ show_checkrawtx(string raw_tx_data, string action)
 
     add_css_style(context);
 
+    uint64_t local_copy_server_timestamp = server_timestamp;
 
     if (unsigned_tx_given)
     {
@@ -2971,7 +2976,8 @@ show_checkrawtx(string raw_tx_data, string action)
                             return string("Cant get block: "  + to_string(txd.blk_height));
                         }
 
-                        pair<string, string> age = get_age(server_timestamp, blk.timestamp);
+                        pair<string, string> age = get_age(local_copy_server_timestamp,
+                                                           blk.timestamp);
 
                         mstch::map single_output {
                                 {"out_index"          , oe.first},
@@ -4949,9 +4955,7 @@ json_transactions(string _page, string _limit)
     limit = limit > 100 ? 100 : limit;
 
     //get current server timestamp
-    server_timestamp = std::time(nullptr);
-
-    uint64_t local_copy_server_timestamp = server_timestamp;
+    uint64_t local_copy_server_timestamp = update_server_timestamp();
 
     uint64_t height = core_storage->get_current_blockchain_height();
 
@@ -5070,9 +5074,7 @@ json_mempool(string _page, string _limit)
     }
 
     //get current server timestamp
-    server_timestamp = std::time(nullptr);
-
-    uint64_t local_copy_server_timestamp = server_timestamp;
+    uint64_t local_copy_server_timestamp = update_server_timestamp();
 
     uint64_t height = core_storage->get_current_blockchain_height();
 
@@ -5157,9 +5159,7 @@ json_search(const string& search_text)
     json& j_data = j_response["data"];
 
     //get current server timestamp
-    server_timestamp = std::time(nullptr);
-
-    uint64_t local_copy_server_timestamp = server_timestamp;
+    uint64_t local_copy_server_timestamp = update_server_timestamp();
 
     uint64_t height = core_storage->get_current_blockchain_height();
 
@@ -6003,6 +6003,8 @@ construct_tx_context(transaction tx, uint16_t with_ring_signatures = 0)
 
     bool detailed_view {enable_mixins_details || static_cast<bool>(with_ring_signatures)};
 
+    uint64_t local_copy_server_timestamp = server_timestamp;
+
     if (core_storage->have_tx(tx_hash))
     {
         // currently get_tx_block_height seems to return a block hight
@@ -6029,7 +6031,7 @@ construct_tx_context(transaction tx, uint16_t with_ring_signatures = 0)
     if (tx_blk_found)
     {
         // calculate difference between tx and server timestamps
-        age = get_age(server_timestamp, blk.timestamp, FULL_AGE_FORMAT);
+        age = get_age(local_copy_server_timestamp, blk.timestamp, FULL_AGE_FORMAT);
 
         blk_timestamp = xmreg::timestamp_to_str_gm(blk.timestamp);
 
@@ -6268,7 +6270,7 @@ construct_tx_context(transaction tx, uint16_t with_ring_signatures = 0)
                 }
 
                 // get age of mixin relative to server time
-                pair<string, string> mixin_age = get_age(server_timestamp,
+                pair<string, string> mixin_age = get_age(local_copy_server_timestamp,
                                                          blk.timestamp,
                                                          FULL_AGE_FORMAT);
                 // get mixin transaction
@@ -6676,6 +6678,13 @@ search_mempool(crypto::hash tx_hash,
     } // for (size_t i = 0; i < mempool_txs.size(); ++i)
 
     return true;
+}
+
+uint64_t
+update_server_timestamp()
+{
+    server_timestamp = std::time(nullptr);
+    return server_timestamp;
 }
 
 pair<string, string>
